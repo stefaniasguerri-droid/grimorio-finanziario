@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimorio Finanziario Botanico & Alchemico</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Cormorant Garamond & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        parchment: { 50: '#faf7f2', 100: '#f4efe6', 200: '#e8decb', 300: '#d7c7aa', 400: '#c5b08e' },
+                        grimoire: { lilac: '#b583b7', softpurple: '#ede4f0', deepviolet: '#4a2b4b', plum: '#341935', sage: '#799a82', darksage: '#2d4a34', moss: '#1e3324', gold: '#c9a24d', darkgold: '#967324' }
+                    },
+                    fontFamily: { serif: ['Cormorant Garamond', 'serif'], sans: ['Plus Jakarta Sans', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            background-color: #f4efe6; 
+            color: #341935; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(181, 131, 183, 0.18) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(121, 154, 130, 0.18) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(201, 162, 77, 0.08) 0%, transparent 60%);
+            background-attachment: fixed; 
+        }
+
+        .grimoire-card { 
+            background: rgba(250, 247, 242, 0.92); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(181, 131, 183, 0.35); 
+            box-shadow: 0 4px 20px rgba(74, 43, 75, 0.06), inset 0 0 15px rgba(215, 199, 170, 0.2); 
+            position: relative;
+        }
+
+        .grimoire-card::before {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px; right: 3px; bottom: 3px;
+            border: 1px solid rgba(201, 162, 77, 0.15);
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        .grimoire-card-interactive { transition: all 0.25s ease; }
+        .grimoire-card-interactive:hover { 
+            border-color: rgba(181, 131, 183, 0.65); 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 25px rgba(74, 43, 75, 0.12); 
+        }
+
+        .floral-bg-pattern { 
+            background-image: radial-gradient(rgba(181, 131, 183, 0.15) 1px, transparent 0); 
+            background-size: 18px 18px; 
+        }
+
+        .tab-btn.active { 
+            color: #4a2b4b; 
+            border-bottom: 2px solid #b583b7; 
+            font-weight: 700; 
+            text-shadow: 0 0 8px rgba(181, 131, 183, 0.3);
+        }
+
+        .moon-phase { letter-spacing: 0.15em; color: #c9a24d; }
+
+        /* Ampolla alchemica */
+        .potion-vial {
+            width: 55px; height: 75px; position: relative;
+            background: rgba(255, 255, 255, 0.65);
+            border: 2px solid #4a2b4b;
+            border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.06), 0 3px 8px rgba(74, 43, 75, 0.12);
+            overflow: hidden; display: flex; align-items: flex-end;
+            clip-path: polygon(35% 0%, 65% 0%, 65% 20%, 100% 100%, 0% 100%, 35% 20%);
+        }
+        .potion-vial::before {
+            content: ''; position: absolute; top: 0px; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 12px; background: #967324; border: 1.5px solid #4a2b4b; border-radius: 2px; z-index: 10;
+        }
+        .potion-liquid {
+            width: 100%; background: linear-gradient(180deg, #b583b7 0%, #799a82 100%);
+            transition: height 0.8s ease-in-out; position: relative;
+        }
+        .potion-liquid::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: rgba(255, 255, 255, 0.5); border-radius: 50%;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f4efe6; }
+        ::-webkit-scrollbar-thumb { background: #b583b7; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24 md:pb-10 floral-bg-pattern">
+
+    <!-- MODALE DI AUTENTICAZIONE EMAIL / PASSWORD -->
+    <div id="auth-modal" class="fixed inset-0 bg-grimoire-deepviolet/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="grimoire-card w-full max-w-md rounded-2xl p-8 relative bg-parchment-50 shadow-2xl text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-grimoire-softpurple flex items-center justify-center text-grimoire-deepviolet border border-grimoire-lilac/40 shadow-inner">
+                <i data-lucide="book-open" class="w-7 h-7"></i>
+            </div>
+            <h2 class="font-serif text-2xl font-bold text-grimoire-deepviolet mb-1">Accesso al Grimorio</h2>
+            <p class="text-xs text-grimoire-plum/70 mb-6 italic">Inserisci le tue credenziali per consultare e sincronizzare il registro magico.</p>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Posta Elettronica</label>
+                    <input type="email" id="auth-email" required placeholder="stregone@natura.com" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2.5 text-sm text-grimoire-deepviolet focus:outline-none focus:border-grimoire-lilac">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Parola Segreta (Password)</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2.5 text-sm text-grimoire-deepviolet focus:outline-none focus:border-grimoire-lilac">
+                </div>
+                
+                <div id="auth-error" class="text-rose-700 text-xs bg-rose-50 border border-rose-200 p-2.5 rounded-xl hidden"></div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="handleLogin()" class="flex-1 bg-grimoire-deepviolet hover:bg-grimoire-plum text-white font-medium py-3 rounded-xl text-xs shadow-md transition">Accedi</button>
+                    <button onclick="handleRegister()" class="flex-1 bg-parchment-100 hover:bg-parchment-200 text-grimoire-deepviolet border border-grimoire-lilac/30 font-medium py-3 rounded-xl text-xs transition">Registrati</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sigillo Superiore Decorativo -->
+    <div class="w-full bg-grimoire-plum text-parchment-100 text-[11px] py-1 px-4 text-center font-serif tracking-widest flex items-center justify-center gap-3 border-b border-grimoire-gold/30">
+        <span class="moon-phase text-xs">☾ ☼ ☽</span>
+        <span>GRIMORIO FINANZIARIO</span>
+        <span class="moon-phase text-xs">☾ ☼ ☽</span>
+    </div>
+
+    <!-- Header / Nav Header -->
+    <header class="grimoire-card sticky top-0 z-40 border-b border-grimoire-lilac/30">
+        <div class="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-grimoire-plum flex items-center justify-center border border-grimoire-gold/40 text-grimoire-gold shadow-md shrink-0">
+                    <i data-lucide="moon" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="font-serif font-bold text-base sm:text-2xl text-grimoire-deepviolet tracking-wide flex items-center gap-2 truncate">
+                        Grimorio
+                        <span id="sync-status" class="text-[9px] sm:text-[10px] font-sans px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold border border-amber-200 shrink-0" title="Stato Sincronizzazione Cloud">Connessione...</span>
+                    </h1>
+                    <p class="text-[11px] sm:text-xs text-grimoire-deepviolet/70 font-serif italic truncate">Gestione Finanziaria</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button onclick="handleLogout()" title="Esci" class="p-2 bg-parchment-100 hover:bg-parchment-200 text-rose-800 rounded-xl border border-rose-200 transition flex items-center justify-center text-xs">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+                <button onclick="openModal('categories-modal')" title="Categorie" class="p-2 bg-parchment-100 hover:bg-parchment-200 text-grimoire-deepviolet rounded-xl border border-grimoire-lilac/40 transition flex items-center justify-center">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+                <button onclick="openModal('transaction-modal')" class="bg-grimoire-deepviolet hover:bg-grimoire-plum text-parchment-50 font-medium p-2 sm:px-4 sm:py-2 rounded-xl text-sm flex items-center gap-2 shadow-md transition border border-grimoire-gold/30">
+                    <i data-lucide="plus" class="w-4 h-4 text-grimoire-gold"></i>
+                    <span class="hidden sm:inline">Nuovo Movimento</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs (Desktop) -->
+        <div class="hidden md:flex justify-center border-t border-grimoire-lilac/20 bg-parchment-50/60">
+            <div class="flex space-x-8 text-sm">
+                <button onclick="switchTab('home')" id="tab-btn-home" class="tab-btn active py-3 px-2 text-grimoire-plum/70 hover:text-grimoire-deepviolet flex items-center gap-2">
+                    <i data-lucide="home" class="w-4 h-4"></i> Home (Panoramica)
+                </button>
+                <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn py-3 px-2 text-grimoire-plum/70 hover:text-grimoire-deepviolet flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i> Analisi & Grafici
+                </button>
+                <button onclick="switchTab('transactions')" id="tab-btn-transactions" class="tab-btn py-3 px-2 text-grimoire-plum/70 hover:text-grimoire-deepviolet flex items-center gap-2">
+                    <i data-lucide="scroll" class="w-4 h-4"></i> Storico & Ricorrenze
+                </button>
+                <button onclick="switchTab('savings')" id="tab-btn-savings" class="tab-btn py-3 px-2 text-grimoire-plum/70 hover:text-grimoire-deepviolet flex items-center gap-2">
+                    <i data-lucide="vault" class="w-4 h-4"></i> Conti
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
+
+        <!-- TAB 1: HOME (PANORAMICA DEL MESE) -->
+        <section id="tab-home" class="space-y-6">
+            
+            <div class="grimoire-card rounded-2xl p-4 border-l-4 border-l-grimoire-gold flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div>
+                    <h2 class="font-serif text-xl font-bold text-grimoire-deepviolet flex items-center gap-2">
+                        <span>Panoramica del Mese</span>
+                    </h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <select id="home-period-select" onchange="handleHomePeriodChange()" class="bg-white border border-grimoire-lilac/40 rounded-xl px-3 py-1.5 text-xs font-medium text-grimoire-deepviolet focus:outline-none">
+                        <option value="current_month">Mese Corrente</option>
+                        <option value="last_month">Mese Scorso</option>
+                        <option value="last_3_months">Ultimi 3 Mesi</option>
+                        <option value="year_to_date">Anno Corrente</option>
+                        <option value="custom">Date Personalizzate</option>
+                    </select>
+
+                    <div id="home-custom-date-container" class="hidden flex items-center gap-2">
+                        <input type="date" id="home-date-start" onchange="renderHomeTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-1 text-xs text-grimoire-plum focus:outline-none">
+                        <span class="text-xs text-grimoire-plum/60 font-serif">al</span>
+                        <input type="date" id="home-date-end" onchange="renderHomeTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-1 text-xs text-grimoire-plum focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metriche Periodo -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                <div class="grimoire-card grimoire-card-interactive rounded-xl sm:rounded-2xl p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] sm:text-xs uppercase font-serif font-bold tracking-widest text-grimoire-darksage block mb-1">✦ Entrate</span>
+                        <span id="home-income" class="text-sm sm:text-3xl font-serif font-bold text-grimoire-darksage">+€0,00</span>
+                    </div>
+                    <div class="hidden sm:flex w-9 h-9 rounded-xl bg-emerald-50 items-center justify-center text-grimoire-darksage border border-emerald-200">
+                        <i data-lucide="sprout" class="w-4 h-4"></i>
+                    </div>
+                </div>
+
+                <div class="grimoire-card grimoire-card-interactive rounded-xl sm:rounded-2xl p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] sm:text-xs uppercase font-serif font-bold tracking-widest text-rose-700 block mb-1">✦ Uscite</span>
+                        <span id="home-expenses" class="text-sm sm:text-3xl font-serif font-bold text-rose-700">-€0,00</span>
+                    </div>
+                    <div class="hidden sm:flex w-9 h-9 rounded-xl bg-rose-50 items-center justify-center text-rose-700 border border-rose-200">
+                        <i data-lucide="flame" class="w-4 h-4"></i>
+                    </div>
+                </div>
+
+                <div class="grimoire-card grimoire-card-interactive rounded-xl sm:rounded-2xl p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] sm:text-xs uppercase font-serif font-bold tracking-widest text-grimoire-deepviolet/70 block mb-1">✦ Saldo</span>
+                        <span id="home-net" class="text-sm sm:text-3xl font-serif font-bold text-grimoire-deepviolet">€0,00</span>
+                    </div>
+                    <div class="hidden sm:flex w-9 h-9 rounded-xl bg-grimoire-softpurple items-center justify-center text-grimoire-deepviolet border border-grimoire-lilac/30">
+                        <i data-lucide="scale" class="w-4 h-4"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Budget Progress Bar -->
+            <div class="grimoire-card rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-2">
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-grimoire-gold"></i>
+                            Budget Spese Complessivo
+                        </h3>
+                        <p class="text-xs text-grimoire-plum/60">Percentuale di spesa totale sommata su tutte le categorie</p>
+                    </div>
+                    <span id="global-budget-pct" class="font-serif font-bold text-lg text-grimoire-deepviolet">0%</span>
+                </div>
+
+                <div class="w-full h-3 bg-parchment-100 rounded-full overflow-hidden border border-grimoire-lilac/30">
+                    <div id="global-budget-bar" class="h-full bg-gradient-to-r from-grimoire-sage via-grimoire-lilac to-rose-400 rounded-full transition-all duration-700" style="width: 0%"></div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-2 text-xs text-grimoire-plum/70">
+                    <span>Speso: <strong id="global-spent-amount">€0,00</strong></span>
+                    <span>Budget Totale: <strong id="global-budget-total">€0,00</strong></span>
+                </div>
+            </div>
+
+            <!-- Categories Cards Grid -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet flex items-center gap-2">
+                        <i data-lucide="grid" class="w-5 h-5 text-grimoire-lilac"></i>
+                        Spese per Categoria
+                    </h3>
+                    <button onclick="openModal('categories-modal')" class="text-xs text-grimoire-deepviolet font-medium hover:underline flex items-center gap-1">
+                        <i data-lucide="settings" class="w-3.5 h-3.5"></i> Personalizza Categorie
+                    </button>
+                </div>
+
+                <div id="home-categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+        </section>
+
+        <!-- TAB 2: ANALISI & GRAFICI -->
+        <section id="tab-analytics" class="space-y-6 hidden">
+            <div class="grimoire-card rounded-2xl p-5 border-l-4 border-l-grimoire-lilac flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="moon-phase text-xs font-serif font-bold">☾ GRAFICI & ANALISI ☽</span>
+                    <h2 class="font-serif text-2xl font-bold text-grimoire-deepviolet">Analisi delle Spese</h2>
+                    <p class="text-xs text-grimoire-plum/70 mt-0.5">Visualizzazione della distribuzione delle uscite e confronto mese per mese.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="analytics-period-select" onchange="handleAnalyticsPeriodChange()" class="bg-white border border-grimoire-lilac/40 rounded-xl px-3 py-2 text-xs font-medium text-grimoire-deepviolet focus:outline-none">
+                        <option value="current_month">Mese Corrente</option>
+                        <option value="last_month">Mese Scorso</option>
+                        <option value="last_3_months">Ultimi 3 Mesi</option>
+                        <option value="year_to_date">Anno Corrente</option>
+                        <option value="custom">Date Personalizzate</option>
+                    </select>
+
+                    <div id="analytics-custom-date-container" class="hidden flex items-center gap-2">
+                        <input type="date" id="analytics-date-start" onchange="renderAnalyticsTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                        <span class="text-xs text-grimoire-plum/60 font-serif">al</span>
+                        <input type="date" id="analytics-date-end" onchange="renderAnalyticsTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grimoire-card rounded-2xl p-6">
+                    <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-grimoire-lilac"></i>
+                        Cerchio delle Spese per Categoria
+                    </h3>
+                    <div class="h-72 relative flex items-center justify-center">
+                        <canvas id="analyticsCategoryChart"></canvas>
+                        <div id="no-analytics-chart-data" class="absolute inset-0 flex flex-col items-center justify-center text-grimoire-plum/40">
+                            <i data-lucide="moon" class="w-8 h-8 mb-2 opacity-40"></i>
+                            <span class="text-sm italic font-serif">Nessuna spesa nel periodo selezionato</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grimoire-card rounded-2xl p-6">
+                    <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet mb-4 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-grimoire-sage"></i>
+                        Andamento Mese per Mese
+                    </h3>
+                    <div class="h-72 relative">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: STORICO MOVIMENTI & RICORRENZE -->
+        <section id="tab-transactions" class="space-y-6 hidden">
+            <div class="grimoire-card rounded-2xl p-6">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+                    <div>
+                        <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet flex items-center gap-2">
+                            <i data-lucide="scroll" class="w-5 h-5 text-grimoire-lilac"></i>
+                            Storico dei Movimenti
+                        </h3>
+                        <p class="text-xs text-grimoire-plum/60">Clicca su una transazione per consultare descrizione e note</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative">
+                            <input type="text" id="tx-search-input" oninput="renderTransactionsTab()" placeholder="Cerca descrizione o nota..." class="bg-white border border-grimoire-lilac/30 rounded-xl pl-8 pr-3 py-1.5 text-xs text-grimoire-plum focus:outline-none focus:border-grimoire-lilac w-48 sm:w-64">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-grimoire-plum/40 absolute left-2.5 top-2.5"></i>
+                        </div>
+
+                        <select id="tx-type-filter" onchange="renderTransactionsTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                            <option value="all">Tutti i Tipi</option>
+                            <option value="expense">Uscite</option>
+                            <option value="income">Entrate</option>
+                        </select>
+
+                        <select id="tx-period-filter" onchange="handleTxPeriodChange()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                            <option value="all">Tutti i Tempi</option>
+                            <option value="current_month">Mese Corrente</option>
+                            <option value="last_month">Mese Scorso</option>
+                            <option value="year_to_date">Anno Corrente</option>
+                            <option value="custom">Date Personalizzate</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="tx-custom-date-container" class="hidden flex items-center gap-2 justify-end mb-4">
+                    <span class="text-xs text-grimoire-plum/70 font-medium">Da:</span>
+                    <input type="date" id="tx-date-start" onchange="renderTransactionsTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-1 text-xs text-grimoire-plum focus:outline-none">
+                    <span class="text-xs text-grimoire-plum/70 font-medium">A:</span>
+                    <input type="date" id="tx-date-end" onchange="renderTransactionsTab()" class="bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-1 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-grimoire-plum">
+                        <thead class="text-xs font-serif uppercase tracking-wider bg-parchment-100 text-grimoire-deepviolet border-b border-grimoire-lilac/20">
+                            <tr>
+                                <th class="py-3 px-4">Data</th>
+                                <th class="py-3 px-4">Categoria</th>
+                                <th class="py-3 px-4 text-right">Importo</th>
+                                <th class="py-3 px-4 text-center w-16">Elimina</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-transactions-table" class="divide-y divide-grimoire-lilac/10"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Movimenti Ricorrenti -->
+            <div class="grimoire-card rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet flex items-center gap-2">
+                            <i data-lucide="repeat" class="w-4 h-4 text-grimoire-darksage"></i>
+                            Spese & Entrate Ricorrenti Programmate
+                        </h3>
+                        <p class="text-xs text-grimoire-plum/60">Addebiti e accrediti automatici previsti</p>
+                    </div>
+                    <button onclick="openModal('recurring-modal')" class="bg-parchment-100 hover:bg-parchment-200 text-grimoire-deepviolet font-medium px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 border border-grimoire-lilac/30 transition">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuova Ricorrenza
+                    </button>
+                </div>
+
+                <div id="recurring-list-container" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- TAB 4: CONTI -->
+        <section id="tab-savings" class="space-y-6 hidden">
+            <div class="grimoire-card rounded-2xl p-6 border-l-4 border-l-grimoire-sage flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="moon-phase text-xs font-serif font-bold">☾ SALDO CONTO PRINCIPALE ☽</span>
+                    <h2 id="total-account-balance" class="text-4xl font-serif font-bold text-grimoire-deepviolet mt-1">€0,00</h2>
+                    <p class="text-xs text-grimoire-plum/60 mt-1">Saldo disponibile sul Conto Principale</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportData()" class="text-xs bg-white hover:bg-parchment-100 text-grimoire-deepviolet border border-grimoire-lilac/30 px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Esporta Backup
+                    </button>
+                </div>
+            </div>
+
+            <div class="grimoire-card rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet flex items-center gap-2">
+                            <i data-lucide="vault" class="w-5 h-5 text-grimoire-gold"></i>
+                            Gestione Conti Separati
+                        </h3>
+                        <p class="text-xs text-grimoire-plum/60">Conti indipendenti per versamenti e uscite dedicate senza intaccare il conto principale</p>
+                    </div>
+                    <button onclick="openModal('pot-modal')" class="bg-grimoire-deepviolet hover:bg-grimoire-plum text-white font-medium px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Nuovo Conto
+                    </button>
+                </div>
+
+                <div id="savings-pots-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 grimoire-card border-t border-grimoire-lilac/30 z-30 px-3 py-2">
+        <div class="flex justify-around items-center">
+            <button onclick="switchTab('home')" id="mobile-nav-home" class="flex flex-col items-center gap-1 text-grimoire-deepviolet">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            <button onclick="switchTab('analytics')" id="mobile-nav-analytics" class="flex flex-col items-center gap-1 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Grafici</span>
+            </button>
+            <button onclick="openModal('transaction-modal')" class="w-11 h-11 rounded-full bg-grimoire-deepviolet text-white flex items-center justify-center shadow-lg -mt-5 border-2 border-grimoire-gold/40">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+            </button>
+            <button onclick="switchTab('transactions')" id="mobile-nav-transactions" class="flex flex-col items-center gap-1 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="scroll" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Storico</span>
+            </button>
+            <button onclick="switchTab('savings')" id="mobile-nav-savings" class="flex flex-col items-center gap-1 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="vault" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Conti</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODALI -->
+    <!-- Dettaglio Categoria -->
+    <div id="category-detail-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-lg rounded-2xl p-6 relative bg-parchment-50 max-h-[85vh] flex flex-col">
+            <button onclick="closeModal('category-detail-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div id="cat-detail-icon-box" class="w-10 h-10 rounded-xl bg-grimoire-softpurple flex items-center justify-center text-grimoire-deepviolet border border-grimoire-lilac/30">
+                    <i data-lucide="folder" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 id="cat-detail-title" class="font-serif text-xl font-bold text-grimoire-deepviolet">Dettaglio Categoria</h3>
+                    <p id="cat-detail-subtitle" class="text-xs text-grimoire-plum/60">Uscite registrate nel periodo</p>
+                </div>
+            </div>
+            <div id="cat-detail-tx-list" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- Modale Dettaglio Movimento -->
+    <div id="tx-detail-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-sm rounded-2xl p-6 relative bg-parchment-50">
+            <button onclick="closeModal('tx-detail-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet mb-3 flex items-center gap-2">
+                <i data-lucide="scroll" class="w-4 h-4 text-grimoire-lilac"></i> Dettaglio Movimento
+            </h3>
+            <div class="space-y-2.5 text-xs text-grimoire-plum">
+                <div><span class="font-serif font-semibold text-grimoire-deepviolet">Data:</span> <span id="modal-tx-date"></span></div>
+                <div><span class="font-serif font-semibold text-grimoire-deepviolet">Conto:</span> <span id="modal-tx-account" class="font-semibold text-grimoire-gold"></span></div>
+                <div><span class="font-serif font-semibold text-grimoire-deepviolet">Categoria:</span> <span id="modal-tx-cat"></span></div>
+                <div><span class="font-serif font-semibold text-grimoire-deepviolet">Importo:</span> <span id="modal-tx-amount" class="font-serif font-bold"></span></div>
+                <div><span class="font-serif font-semibold text-grimoire-deepviolet">Descrizione:</span> <p id="modal-tx-desc" class="mt-0.5 p-2 bg-white rounded-xl border border-grimoire-lilac/20 text-grimoire-deepviolet"></p></div>
+                <div><span class="font-serif font-semibold text-grimoire-deepviolet">Nota Aggiuntiva:</span> <p id="modal-tx-note" class="mt-0.5 p-2 bg-white rounded-xl border border-grimoire-lilac/20 italic text-grimoire-plum/70">Nessuna nota</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Registra Movimento -->
+    <div id="transaction-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-md rounded-2xl p-6 relative bg-parchment-50">
+            <button onclick="closeModal('transaction-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet mb-4 flex items-center gap-2">
+                <i data-lucide="feather" class="w-5 h-5 text-grimoire-lilac"></i>
+                Registra Movimento
+            </h3>
+            <form id="transaction-form" onsubmit="handleAddTransaction(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-2 p-1 bg-parchment-100 rounded-xl border border-grimoire-lilac/20">
+                    <button type="button" id="btn-type-expense" onclick="setTransactionType('expense')" class="py-2 text-xs font-semibold rounded-lg bg-rose-100 text-rose-800 border border-rose-200">Uscita</button>
+                    <button type="button" id="btn-type-income" onclick="setTransactionType('income')" class="py-2 text-xs font-semibold rounded-lg text-grimoire-plum/60">Entrata</button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Conto Coinvolto</label>
+                    <select id="tx-account-select" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none">
+                        <option value="main">Conto Principale</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Importo (€)</label>
+                    <input type="number" step="0.01" id="tx-amount" required placeholder="0.00" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-grimoire-deepviolet font-serif text-lg focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Descrizione</label>
+                    <input type="text" id="tx-desc" required placeholder="es. Carburante auto, Spesa Lidl..." class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-sm text-grimoire-plum focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Nota Aggiuntiva (Opzionale)</label>
+                    <input type="text" id="tx-note" placeholder="es. Pagato con carta..." class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Categoria</label>
+                        <select id="tx-category-select" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Data</label>
+                        <input type="date" id="tx-date" required class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-grimoire-deepviolet hover:bg-grimoire-plum text-white font-medium py-3 rounded-xl text-sm shadow-md transition">Salva Movimento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Personalizza Categorie & Budget -->
+    <div id="categories-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-lg rounded-2xl p-6 relative bg-parchment-50 max-h-[85vh] flex flex-col">
+            <button onclick="closeModal('categories-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet mb-1 flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5 text-grimoire-lilac"></i>
+                Personalizza Categorie & Budget
+            </h3>
+            <p class="text-xs text-grimoire-plum/60 mb-4">Aggiungi, modifica o rimuovi categorie con icone personalizzate.</p>
+            <form id="category-form" onsubmit="handleSaveCategoryForm(event)" class="bg-white p-3 rounded-xl border border-grimoire-lilac/20 space-y-3 mb-4">
+                <input type="hidden" id="editing-cat-id">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input type="text" id="new-cat-name" placeholder="Nome Categoria" required class="bg-parchment-50 border border-grimoire-lilac/30 rounded-lg px-3 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                    <input type="number" step="1" id="new-cat-budget" placeholder="Budget (€)" required class="bg-parchment-50 border border-grimoire-lilac/30 rounded-lg px-3 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                    <select id="new-cat-icon" class="bg-parchment-50 border border-grimoire-lilac/30 rounded-lg px-2 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                        <option value="car">🚗 Macchina / Auto</option>
+                        <option value="credit-card">💳 Carta / Spese Bancarie</option>
+                        <option value="euro">💶 Euro / Finanza</option>
+                        <option value="moon">🌙 Luna / Notte</option>
+                        <option value="flask-conical">🧪 Pozione / Alchimia</option>
+                        <option value="flame">🕯️ Candela / Casa</option>
+                        <option value="skull">💀 Teschio / Botanica</option>
+                        <option value="apple">🍎 Mela / Cibo</option>
+                        <option value="home">🏡 Casa / Utenze</option>
+                        <option value="leaf">🍃 Foglia / Cura</option>
+                        <option value="flower-2">🌸 Fiore / Svago</option>
+                        <option value="compass">🧭 Bussola / Viaggi</option>
+                        <option value="sprout">🌱 Germoglio / Entrate</option>
+                        <option value="heart">🖤 Cuore / Benessere</option>
+                        <option value="gift">🎁 Dono / Regali</option>
+                        <option value="sparkles">✨ Magia / Speciale</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" id="cat-submit-btn" class="flex-1 bg-grimoire-darksage hover:bg-grimoire-moss text-white font-medium py-2 rounded-lg text-xs shadow transition">+ Aggiungi Nuova Categoria</button>
+                    <button type="button" id="cat-cancel-btn" onclick="resetCategoryForm()" class="hidden px-3 bg-parchment-200 text-grimoire-deepviolet rounded-lg text-xs font-medium">Annulla</button>
+                </div>
+            </form>
+            <div id="modal-categories-list" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- Modale Ricorrenti -->
+    <div id="recurring-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-md rounded-2xl p-6 relative bg-parchment-50">
+            <button onclick="closeModal('recurring-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet mb-4 flex items-center gap-2">
+                <i data-lucide="repeat" class="w-5 h-5 text-grimoire-lilac"></i>
+                Nuova Ricorrenza Programmata
+            </h3>
+            <form id="recurring-form" onsubmit="handleAddRecurring(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2 p-1 bg-parchment-100 rounded-xl border border-grimoire-lilac/20">
+                    <button type="button" id="btn-rec-type-expense" onclick="setRecurringType('expense')" class="py-1.5 text-xs font-semibold rounded-lg bg-rose-100 text-rose-800 border border-rose-200">Uscita Ricorrente</button>
+                    <button type="button" id="btn-rec-type-income" onclick="setRecurringType('income')" class="py-1.5 text-xs font-semibold rounded-lg text-grimoire-plum/60">Entrata Ricorrente</button>
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Conto Coinvolto</label>
+                    <select id="rec-account-select" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none">
+                        <option value="main">Conto Principale</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Importo (€)</label>
+                    <input type="number" step="0.01" id="rec-amount" required placeholder="0.00" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-grimoire-deepviolet font-serif text-base focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Descrizione</label>
+                    <input type="text" id="rec-desc" required placeholder="es. Affitto Casa, Bollo auto..." class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Categoria</label>
+                        <select id="rec-category-select" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-2 text-xs text-grimoire-plum focus:outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Frequenza</label>
+                        <select id="rec-frequency" onchange="toggleCustomFreqInput()" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-2.5 py-2 text-xs text-grimoire-plum focus:outline-none">
+                            <option value="weekly">Settimanale</option>
+                            <option value="custom_weeks">Ogni X Settimane</option>
+                            <option value="monthly" selected>Mensile</option>
+                            <option value="bimonthly">Bimestrale</option>
+                            <option value="custom_months">Ogni X Mesi</option>
+                            <option value="yearly">Annuale</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="rec-custom-freq-box" class="hidden">
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Intervallo Personalizzato</label>
+                    <input type="number" id="rec-custom-val" placeholder="es. 3" min="1" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Data Prossimo Addebito/Accredito</label>
+                    <input type="date" id="rec-next-date" required class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-grimoire-deepviolet hover:bg-grimoire-plum text-white font-medium py-2.5 rounded-xl text-xs shadow transition">Pianifica Ricorrenza</button>
+            </form>
+        </div>
+    </div>
+    <!-- Modale Conto -->
+    <div id="pot-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-md rounded-2xl p-6 relative bg-parchment-50 max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('pot-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-xl font-bold text-grimoire-deepviolet mb-4 flex items-center gap-2">
+                <i data-lucide="vault" class="w-5 h-5 text-grimoire-gold"></i>
+                <span id="pot-modal-title">Nuovo Conto</span>
+            </h3>
+            <form id="pot-form" onsubmit="handleAddPot(event)" class="space-y-4">
+                <input type="hidden" id="editing-pot-id">
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Nome Conto</label>
+                    <input type="text" id="pot-name" required placeholder="es. Fondo Emergenze, Spese Auto..." class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-sm text-grimoire-plum focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Obiettivo (Opzionale €)</label>
+                    <input type="number" step="0.01" id="pot-target" placeholder="0.00" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-grimoire-deepviolet font-serif text-base focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Saldo Iniziale / Attuale (€)</label>
+                    <input type="number" step="0.01" id="pot-current" placeholder="0.00" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-sm text-grimoire-plum focus:outline-none">
+                </div>
+
+                <!-- Sezione Versamento Automatico Programmato -->
+                <div class="p-3 bg-white rounded-xl border border-grimoire-lilac/20 space-y-3">
+                    <h4 class="font-serif font-bold text-xs text-grimoire-deepviolet flex items-center gap-1.5">
+                        <i data-lucide="repeat" class="w-3.5 h-3.5 text-grimoire-sage"></i> Versamento Automatico Programmato
+                    </h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-serif font-semibold text-grimoire-deepviolet mb-0.5">Importo (€)</label>
+                            <input type="number" step="0.01" id="pot-auto-amount" placeholder="es. 100.00" class="w-full bg-parchment-50 border border-grimoire-lilac/30 rounded-lg px-2.5 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-serif font-semibold text-grimoire-deepviolet mb-0.5">Frequenza</label>
+                            <select id="pot-auto-freq" class="w-full bg-parchment-50 border border-grimoire-lilac/30 rounded-lg px-2 py-1.5 text-xs text-grimoire-plum focus:outline-none">
+                                <option value="weekly">Settimanale</option>
+                                <option value="monthly" selected>Mensile</option>
+                                <option value="bimonthly">Bimestrale</option>
+                                <option value="yearly">Annuale</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" id="pot-submit-btn" class="flex-1 bg-grimoire-darksage hover:bg-grimoire-moss text-white font-medium py-3 rounded-xl text-sm shadow transition">Crea Conto</button>
+                    <button type="button" onclick="resetPotForm()" class="px-4 bg-parchment-200 text-grimoire-deepviolet rounded-xl text-xs font-medium">Annulla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Versa in Conto -->
+    <div id="deposit-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-sm rounded-2xl p-6 relative bg-parchment-50">
+            <button onclick="closeModal('deposit-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet mb-1" id="deposit-pot-title">Versamento su Conto</h3>
+            <p class="text-xs text-grimoire-plum/60 mb-4">Aggiungi fondi a questo conto separato.</p>
+            <form id="deposit-form" onsubmit="handleDepositPot(event)" class="space-y-4">
+                <input type="hidden" id="deposit-pot-id">
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Importo Versamento (€)</label>
+                    <input type="number" step="0.01" id="deposit-amount" required placeholder="50.00" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-grimoire-deepviolet font-serif text-lg focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-grimoire-deepviolet hover:bg-grimoire-plum text-white font-medium py-3 rounded-xl text-sm shadow transition">Conferma Versamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Uscita da Conto -->
+    <div id="pot-expense-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-sm rounded-2xl p-6 relative bg-parchment-50">
+            <button onclick="closeModal('pot-expense-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="font-serif text-lg font-bold text-grimoire-deepviolet mb-1" id="pot-expense-title">Registra Uscita dal Conto</h3>
+            <p class="text-xs text-rose-700/80 mb-4">La spesa verrà prelevata da questo conto e registrata nello storico generale.</p>
+            <form id="pot-expense-form" onsubmit="handlePotExpense(event)" class="space-y-3">
+                <input type="hidden" id="pot-expense-id">
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Importo Uscita (€)</label>
+                    <input type="number" step="0.01" id="pot-exp-amount" required placeholder="45.00" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-4 py-2 text-grimoire-deepviolet font-serif text-lg focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Descrizione Spesa</label>
+                    <input type="text" id="pot-exp-desc" required placeholder="es. Riparazione d'emergenza auto..." class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Categoria</label>
+                    <select id="pot-exp-category-select" class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-serif font-semibold text-grimoire-deepviolet mb-1">Data</label>
+                    <input type="date" id="pot-exp-date" required class="w-full bg-white border border-grimoire-lilac/30 rounded-xl px-3 py-2 text-xs text-grimoire-plum focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-medium py-3 rounded-xl text-sm shadow transition">Registra Uscita da Conto</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale Storico Uscite del Conto (Cash Stuffing Log) -->
+    <div id="pot-history-modal" class="fixed inset-0 bg-grimoire-deepviolet/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="grimoire-card w-full max-w-lg rounded-2xl p-6 relative bg-parchment-50 max-h-[85vh] flex flex-col">
+            <button onclick="closeModal('pot-history-modal')" class="absolute top-4 right-4 text-grimoire-plum/50 hover:text-grimoire-deepviolet">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-grimoire-softpurple flex items-center justify-center text-grimoire-deepviolet border border-grimoire-lilac/30">
+                    <i data-lucide="scroll" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 id="pot-history-title" class="font-serif text-xl font-bold text-grimoire-deepviolet">Storico Uscite Conto</h3>
+                    <p class="text-xs text-grimoire-plum/60">Lista delle spese prelevate da questo fondo</p>
+                </div>
+            </div>
+            <div id="pot-history-list" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- FIREBASE & LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'grimorio-finanziario-botanico';
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2PwJdWkxIRka3evEgPHAQdw6zpluxA8A",
+            authDomain: "grimorio-finanziario.firebaseapp.com",
+            projectId: "grimorio-finanziario",
+            storageBucket: "grimorio-finanziario.firebasestorage.app",
+            messagingSenderId: "536997033539",
+            appId: "1:536997033539:web:404e88304ad19df95586f6",
+            measurementId: "G-TDW9Y9MSKZ"
+        };
+
+        let app, db, auth;
+        let userId = null;
+        let unsubscribers = [];
+
+        window.state = {
+            categories: JSON.parse(localStorage.getItem('grimorio_categories')) || [
+                { id: '1', name: 'Spesa & Alimentari', budget: 350, icon: 'apple' },
+                { id: '2', name: 'Casa & Utenze', budget: 600, icon: 'home' },
+                { id: '3', name: 'Spese Auto & Viaggi', budget: 200, icon: 'car' },
+                { id: '4', name: 'Spese Bancarie & Carte', budget: 50, icon: 'credit-card' },
+                { id: '5', name: 'Alchimia & Rituali', budget: 100, icon: 'flask-conical' },
+                { id: '6', name: 'Salute & Cura', budget: 150, icon: 'leaf' },
+                { id: '7', name: 'Svago & Tempo Libero', budget: 200, icon: 'flower-2' },
+                { id: '8', name: 'Stipendio & Entrate', budget: 0, icon: 'sprout' }
+            ],
+            transactions: JSON.parse(localStorage.getItem('grimorio_transactions')) || [],
+            recurring: JSON.parse(localStorage.getItem('grimorio_recurring')) || [],
+            pots: JSON.parse(localStorage.getItem('grimorio_pots')) || [],
+            currentTxType: 'expense',
+            currentRecType: 'expense',
+            activeTab: 'home',
+            analyticsChartInstance: null,
+            trendChartInstance: null
+        };
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, (user) => {
+                const modal = document.getElementById('auth-modal');
+                const errorEl = document.getElementById('auth-error');
+                errorEl.classList.add('hidden');
+
+                if (user) {
+                    userId = user.uid;
+                    modal.classList.add('hidden');
+                    document.getElementById('sync-status').innerText = "Cloud Sincronizzato";
+                    document.getElementById('sync-status').className = "text-[9px] sm:text-[10px] font-sans px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200";
+                    initFirestoreListeners();
+                } else {
+                    userId = null;
+                    modal.classList.remove('hidden');
+                    document.getElementById('sync-status').innerText = "In attesa";
+                    document.getElementById('sync-status').className = "text-[9px] sm:text-[10px] font-sans px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold border border-amber-200";
+                    
+                    unsubscribers.forEach(unsub => unsub());
+                    unsubscribers = [];
+                }
+            });
+        } catch (e) {
+            console.error("Errore inizializzazione Firebase:", e);
+        }
+
+        window.handleLogin = async function() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                errorEl.innerText = "Errore di accesso: " + err.message;
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        window.handleRegister = async function() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                errorEl.innerText = "Errore di registrazione: " + err.message;
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        window.handleLogout = async function() {
+            try {
+                await signOut(auth);
+            } catch (err) {
+                console.error("Errore disconnessione:", err);
+            }
+        }
+
+        function initFirestoreListeners() {
+            if (!userId) return;
+
+            unsubscribers.push(onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'categories'), (snapshot) => {
+                const loaded = []; snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
+                if (loaded.length > 0) window.state.categories = loaded;
+                else window.state.categories.forEach(c => setDoc(doc(db, 'artifacts', appId, 'users', userId, 'categories', c.id), c));
+                populateCategorySelects(); renderApp();
+            }));
+
+            unsubscribers.push(onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'transactions'), (snapshot) => {
+                const loaded = []; snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
+                window.state.transactions = loaded.sort((a,b) => new Date(b.date) - new Date(a.date));
+                localStorage.setItem('grimorio_transactions', JSON.stringify(window.state.transactions));
+                renderApp();
+            }));
+
+            unsubscribers.push(onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'recurring'), (snapshot) => {
+                const loaded = []; snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
+                window.state.recurring = loaded;
+                localStorage.setItem('grimorio_recurring', JSON.stringify(window.state.recurring));
+                renderApp();
+            }));
+
+            unsubscribers.push(onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'pots'), (snapshot) => {
+                const loaded = []; snapshot.forEach(doc => loaded.push({ id: doc.id, ...doc.data() }));
+                window.state.pots = loaded;
+                localStorage.setItem('grimorio_pots', JSON.stringify(window.state.pots));
+                renderApp();
+            }));
+        }
+
+        window.saveDataToCloud = async function(col, id, obj) {
+            localStorage.setItem(`grimorio_${col}`, JSON.stringify(window.state[col]));
+            if (userId) {
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', userId, col, id), obj); } catch(e){ console.error(e); }
+            }
+            renderApp();
+        };
+
+        window.deleteDataFromCloud = async function(col, id) {
+            window.state[col] = window.state[col].filter(item => item.id !== id);
+            localStorage.setItem(`grimorio_${col}`, JSON.stringify(window.state[col]));
+            
+            if (userId) {
+                try { 
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, col, id)); 
+                } catch(e) {
+                    console.error("Errore eliminazione Cloud:", e);
+                }
+            }
+            renderApp();
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('tx-date').valueAsDate = new Date();
+            document.getElementById('rec-next-date').valueAsDate = new Date();
+            document.getElementById('pot-exp-date').valueAsDate = new Date();
+            populateCategorySelects();
+            renderApp();
+        });
+
+        window.formatEUR = function(val) {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(val);
+        }
+
+        window.switchTab = function(tabId) {
+            window.state.activeTab = tabId;
+            ['home', 'analytics', 'transactions', 'savings'].forEach(t => {
+                const sec = document.getElementById(`tab-${t}`);
+                const btnDesktop = document.getElementById(`tab-btn-${t}`);
+                const btnMobile = document.getElementById(`mobile-nav-${t}`);
+
+                if(t === tabId) {
+                    sec.classList.remove('hidden');
+                    if(btnDesktop) btnDesktop.classList.add('active');
+                    if(btnMobile) btnMobile.className = "flex flex-col items-center gap-1 text-grimoire-deepviolet font-bold";
+                } else {
+                    sec.classList.add('hidden');
+                    if(btnDesktop) btnDesktop.classList.remove('active');
+                    if(btnMobile) btnMobile.className = "flex flex-col items-center gap-1 text-grimoire-plum/50 hover:text-grimoire-deepviolet";
+                }
+            });
+            renderApp();
+        }
+
+        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); }
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function populateCategorySelects() {
+            ['tx-category-select', 'rec-category-select', 'pot-exp-category-select'].forEach(sId => {
+                const el = document.getElementById(sId);
+                if(!el) return;
+                el.innerHTML = '';
+                window.state.categories.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.name; opt.innerText = c.name; el.appendChild(opt);
+                });
+            });
+
+            // Popola i select dei Conti nei Form Movimenti
+            ['tx-account-select', 'rec-account-select'].forEach(sId => {
+                const el = document.getElementById(sId);
+                if(!el) return;
+                el.innerHTML = '<option value="main">Conto Principale</option>';
+                window.state.pots.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id; 
+                    opt.innerText = p.name; 
+                    el.appendChild(opt);
+                });
+            });
+        }
+
+        window.renderApp = function() {
+            populateCategorySelects();
+            if(window.state.activeTab === 'home') renderHomeTab();
+            else if(window.state.activeTab === 'analytics') renderAnalyticsTab();
+            else if(window.state.activeTab === 'transactions') renderTransactionsTab();
+            else if(window.state.activeTab === 'savings') renderSavingsTab();
+            renderCategoriesModalList();
+            lucide.createIcons();
+        }
+
+        function getFilteredTransactions(periodType, startDateVal, endDateVal) {
+            const now = new Date();
+            const currYear = now.getFullYear();
+            const currMonth = now.getMonth();
+
+            return window.state.transactions.filter(t => {
+                const d = new Date(t.date);
+                if(periodType === 'current_month') return d.getFullYear() === currYear && d.getMonth() === currMonth;
+                if(periodType === 'last_month') { const lm = new Date(currYear, currMonth - 1, 1); return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth(); }
+                if(periodType === 'last_3_months') { const limit = new Date(); limit.setMonth(limit.getMonth() - 3); return d >= limit; }
+                if(periodType === 'year_to_date') return d.getFullYear() === currYear;
+                if(periodType === 'custom' && startDateVal && endDateVal) return t.date >= startDateVal && t.date <= endDateVal;
+                return true;
+            });
+        }
+
+        window.handleHomePeriodChange = function() {
+            const val = document.getElementById('home-period-select').value;
+            const container = document.getElementById('home-custom-date-container');
+            if(val === 'custom') container.classList.remove('hidden');
+            else container.classList.add('hidden');
+            renderHomeTab();
+        }
+
+        function renderHomeTab() {
+            const periodType = document.getElementById('home-period-select').value;
+            const sDate = document.getElementById('home-date-start').value;
+            const eDate = document.getElementById('home-date-end').value;
+
+            const txs = getFilteredTransactions(periodType, sDate, eDate);
+
+            let income = 0; let expense = 0; const catSpentMap = {};
+            txs.forEach(t => {
+                if(t.type === 'income') income += t.amount;
+                else { expense += t.amount; catSpentMap[t.category] = (catSpentMap[t.category] || 0) + t.amount; }
+            });
+
+            document.getElementById('home-income').innerText = `+${formatEUR(income)}`;
+            document.getElementById('home-expenses').innerText = `-${formatEUR(expense)}`;
+            document.getElementById('home-net').innerText = formatEUR(income - expense);
+
+            let totalBudget = 0;
+            window.state.categories.forEach(c => totalBudget += (c.budget || 0));
+
+            const globalPct = totalBudget > 0 ? Math.round((expense / totalBudget) * 100) : 0;
+            document.getElementById('global-budget-pct').innerText = `${globalPct}%`;
+            document.getElementById('global-spent-amount').innerText = formatEUR(expense);
+            document.getElementById('global-budget-total').innerText = formatEUR(totalBudget);
+            
+            const barEl = document.getElementById('global-budget-bar');
+            barEl.style.width = `${Math.min(globalPct, 100)}%`;
+            barEl.className = globalPct > 100 ? "h-full bg-rose-600 rounded-full transition-all duration-700" : "h-full bg-gradient-to-r from-grimoire-sage via-grimoire-lilac to-rose-400 rounded-full transition-all duration-700";
+
+            const grid = document.getElementById('home-categories-grid');
+            grid.innerHTML = '';
+
+            window.state.categories.forEach(c => {
+                const spent = catSpentMap[c.name] || 0;
+                const budget = c.budget || 0;
+                const pct = budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0;
+                const isOver = budget > 0 && spent > budget;
+
+                const card = document.createElement('div');
+                card.className = "grimoire-card grimoire-card-interactive rounded-2xl p-4 cursor-pointer relative overflow-hidden";
+                card.onclick = () => openCategoryDetailModal(c.name, txs);
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-grimoire-softpurple text-grimoire-deepviolet flex items-center justify-center border border-grimoire-lilac/30">
+                                <i data-lucide="${c.icon || 'leaf'}" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-serif font-bold text-sm text-grimoire-deepviolet">${c.name}</h4>
+                                <p class="text-[11px] text-grimoire-plum/60">Budget: ${formatEUR(budget)}</p>
+                            </div>
+                        </div>
+                        <span class="font-serif font-bold text-sm ${isOver ? 'text-rose-700' : 'text-grimoire-deepviolet'}">${formatEUR(spent)}</span>
+                    </div>
+                    ${budget > 0 ? `
+                    <div class="w-full h-1.5 bg-parchment-100 rounded-full overflow-hidden mt-2 border border-grimoire-lilac/10">
+                        <div class="h-full ${isOver ? 'bg-rose-600' : 'bg-grimoire-lilac'} rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="flex justify-between items-center mt-1 text-[10px] text-grimoire-plum/60">
+                        <span>${pct}% del budget</span>
+                        ${isOver ? '<span class="text-rose-700 font-bold">Sforato!</span>' : ''}
+                    </div>
+                    ` : ''}
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function openCategoryDetailModal(catName, periodTxs) {
+            const cat = window.state.categories.find(c => c.name === catName);
+            document.getElementById('cat-detail-title').innerText = catName;
+            document.getElementById('cat-detail-subtitle').innerText = `Lista uscite in "${catName}" per il periodo scelto`;
+            document.getElementById('cat-detail-icon-box').innerHTML = `<i data-lucide="${cat ? cat.icon : 'folder'}" class="w-5 h-5"></i>`;
+
+            const listContainer = document.getElementById('cat-detail-tx-list');
+            listContainer.innerHTML = '';
+
+            const catTxs = periodTxs.filter(t => t.category === catName);
+
+            if(catTxs.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-grimoire-plum/40 py-6 text-center italic font-serif">Nessun movimento in questa categoria per il periodo scelto.</p>`;
+            } else {
+                catTxs.forEach(t => {
+                    const isExpense = t.type === 'expense';
+                    const item = document.createElement('div');
+                    item.className = "flex items-center justify-between p-3 rounded-xl bg-white border border-grimoire-lilac/20";
+                    item.innerHTML = `
+                        <div>
+                            <p class="text-sm font-medium text-grimoire-deepviolet">${t.desc}</p>
+                            <p class="text-[11px] text-grimoire-plum/60">${t.date} ${t.note ? '• Note: ' + t.note : ''}</p>
+                        </div>
+                        <span class="font-serif font-bold text-sm ${isExpense ? 'text-rose-700' : 'text-grimoire-darksage'}">
+                            ${isExpense ? '-' : '+'}${formatEUR(t.amount)}
+                        </span>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            }
+
+            lucide.createIcons();
+            openModal('category-detail-modal');
+        }
+
+        window.handleAnalyticsPeriodChange = function() {
+            const val = document.getElementById('analytics-period-select').value;
+            const container = document.getElementById('analytics-custom-date-container');
+            if(val === 'custom') container.classList.remove('hidden');
+            else container.classList.add('hidden');
+            renderAnalyticsTab();
+        }
+
+        function renderAnalyticsTab() {
+            const periodType = document.getElementById('analytics-period-select').value;
+            const sDate = document.getElementById('analytics-date-start').value;
+            const eDate = document.getElementById('analytics-date-end').value;
+
+            const txs = getFilteredTransactions(periodType, sDate, eDate);
+
+            const catMap = {};
+            txs.filter(t => t.type === 'expense').forEach(t => {
+                catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+            });
+
+            const labels = Object.keys(catMap);
+            const data = Object.values(catMap);
+            const noDataEl = document.getElementById('no-analytics-chart-data');
+            const ctxDonut = document.getElementById('analyticsCategoryChart').getContext('2d');
+
+            if(data.length === 0) {
+                noDataEl.classList.remove('hidden');
+                if(window.state.analyticsChartInstance) window.state.analyticsChartInstance.destroy();
+            } else {
+                noDataEl.classList.add('hidden');
+                if(window.state.analyticsChartInstance) window.state.analyticsChartInstance.destroy();
+
+                window.state.analyticsChartInstance = new Chart(ctxDonut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#b583b7', '#799a82', '#d7c7aa', '#4a2b4b', '#e8decb', '#c47171', '#5c8374', '#9d4edd', '#c9a24d'],
+                            borderWidth: 2,
+                            borderColor: '#faf7f2'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right', labels: { color: '#341935', font: { family: 'Plus Jakarta Sans', size: 11 } } } },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            const monthlyData = {};
+            window.state.transactions.forEach(t => {
+                const monthKey = t.date.slice(0, 7);
+                if(!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0 };
+                if(t.type === 'income') monthlyData[monthKey].income += t.amount;
+                else monthlyData[monthKey].expense += t.amount;
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const incomeData = sortedMonths.map(m => monthlyData[m].income);
+            const expenseData = sortedMonths.map(m => monthlyData[m].expense);
+
+            const ctxBar = document.getElementById('monthlyTrendChart').getContext('2d');
+            if(window.state.trendChartInstance) window.state.trendChartInstance.destroy();
+
+            window.state.trendChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: sortedMonths,
+                    datasets: [
+                        { label: 'Entrate', data: incomeData, backgroundColor: '#799a82', borderRadius: 4 },
+                        { label: 'Uscite', data: expenseData, backgroundColor: '#c47171', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { color: '#341935', font: { family: 'Plus Jakarta Sans', size: 11 } } } },
+                    scales: { x: { ticks: { color: '#341935' } }, y: { ticks: { color: '#341935' } } }
+                }
+            });
+        }
+
+        window.handleTxPeriodChange = function() {
+            const val = document.getElementById('tx-period-filter').value;
+            const container = document.getElementById('tx-custom-date-container');
+            if(val === 'custom') container.classList.remove('hidden');
+            else container.classList.add('hidden');
+            renderTransactionsTab();
+        }
+
+        function renderTransactionsTab() {
+            const search = document.getElementById('tx-search-input').value.toLowerCase();
+            const typeFilter = document.getElementById('tx-type-filter').value;
+            const periodType = document.getElementById('tx-period-filter').value;
+            const sDate = document.getElementById('tx-date-start').value;
+            const eDate = document.getElementById('tx-date-end').value;
+
+            let filtered = getFilteredTransactions(periodType, sDate, eDate);
+            filtered = filtered.filter(t => {
+                const matchesSearch = t.desc.toLowerCase().includes(search) || (t.note && t.note.toLowerCase().includes(search)) || t.category.toLowerCase().includes(search);
+                const matchesType = typeFilter === 'all' || t.type === typeFilter;
+                return matchesSearch && matchesType;
+            });
+
+            const tbody = document.getElementById('history-transactions-table');
+            tbody.innerHTML = '';
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-grimoire-plum/40 italic font-serif">Nessun movimento trovato</td></tr>`;
+            } else {
+                filtered.forEach(t => {
+                    const isExpense = t.type === 'expense';
+                    const accountName = t.accountId && t.accountId !== 'main' 
+                        ? (window.state.pots.find(p => p.id === t.accountId)?.name || 'Conto Separato') 
+                        : 'Conto Principale';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-white/60 transition cursor-pointer';
+                    tr.onclick = (e) => {
+                        if (e.target.closest('button')) return;
+                        openTxDetailModal(t);
+                    };
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 text-xs font-medium">
+                            <div>${t.date}</div>
+                            <div class="text-[10px] text-grimoire-gold font-semibold">${accountName}</div>
+                        </td>
+                        <td class="py-3 px-4 text-xs text-grimoire-plum/80"><span class="px-2 py-1 rounded-md bg-white border border-grimoire-lilac/20">${t.category}</span></td>
+                        <td class="py-3 px-4 text-right font-serif font-bold ${isExpense ? 'text-rose-700' : 'text-grimoire-darksage'}">
+                            ${isExpense ? '-' : '+'}${formatEUR(t.amount)}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="deleteTransaction('${t.id}')" class="text-grimoire-plum/30 hover:text-rose-700 transition p-1" title="Elimina">
+                                <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            renderRecurringList();
+            lucide.createIcons();
+        }
+
+        window.openTxDetailModal = function(t) {
+            document.getElementById('modal-tx-date').innerText = t.date;
+            const accName = t.accountId && t.accountId !== 'main' 
+                ? (window.state.pots.find(p => p.id === t.accountId)?.name || 'Conto Separato') 
+                : 'Conto Principale';
+            document.getElementById('modal-tx-account').innerText = accName;
+            document.getElementById('modal-tx-cat').innerText = t.category;
+            const amtEl = document.getElementById('modal-tx-amount');
+            const isExp = t.type === 'expense';
+            amtEl.innerText = `${isExp ? '-' : '+'}${formatEUR(t.amount)}`;
+            amtEl.className = `font-serif font-bold ${isExp ? 'text-rose-700' : 'text-grimoire-darksage'}`;
+            document.getElementById('modal-tx-desc').innerText = t.desc;
+            
+            const noteEl = document.getElementById('modal-tx-note');
+            if(t.note && t.note.trim() !== '') {
+                noteEl.innerText = t.note;
+                noteEl.classList.remove('italic', 'text-grimoire-plum/40');
+            } else {
+                noteEl.innerText = 'Nessuna nota aggiuntiva';
+                noteEl.classList.add('italic', 'text-grimoire-plum/40');
+            }
+            openModal('tx-detail-modal');
+        }
+
+        function renderRecurringList() {
+            const container = document.getElementById('recurring-list-container');
+            container.innerHTML = '';
+
+            if(window.state.recurring.length === 0) {
+                container.innerHTML = `<p class="text-xs text-grimoire-plum/40 py-4 text-center italic font-serif">Nessuna spesa o entrata ricorrente programmata.</p>`;
+                return;
+            }
+
+            window.state.recurring.forEach(item => {
+                const isExpense = item.type === 'expense';
+                const el = document.createElement('div');
+                el.className = "flex items-center justify-between p-3.5 rounded-xl bg-white border border-grimoire-lilac/20";
+                el.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg ${isExpense ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-emerald-50 text-grimoire-darksage border border-emerald-100'} flex items-center justify-center">
+                            <i data-lucide="repeat" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-grimoire-deepviolet">${item.desc}</p>
+                            <p class="text-[11px] text-grimoire-plum/60">${item.category} • Frequenza: ${item.frequency} • Prossima data: <strong>${item.nextDate}</strong></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-serif font-bold text-sm ${isExpense ? 'text-rose-700' : 'text-grimoire-darksage'}">
+                            ${isExpense ? '-' : '+'}${formatEUR(item.amount)}
+                        </span>
+                        <button onclick="deleteRecurring('${item.id}')" class="text-grimoire-plum/30 hover:text-rose-700 transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function renderSavingsTab() {
+            let totalAccBalance = 0;
+            // Saldo Conto Principale (solo movimenti afferenti a 'main' o senza accountId)
+            window.state.transactions.forEach(t => {
+                if(!t.accountId || t.accountId === 'main') {
+                    if(t.type === 'income') totalAccBalance += t.amount;
+                    else totalAccBalance -= t.amount;
+                }
+            });
+            document.getElementById('total-account-balance').innerText = formatEUR(totalAccBalance);
+
+            const container = document.getElementById('savings-pots-grid');
+            container.innerHTML = '';
+
+            if(window.state.pots.length === 0) {
+                container.innerHTML = `<p class="text-xs text-grimoire-plum/40 py-6 text-center italic font-serif col-span-3">Nessun conto separato creato.</p>`;
+                return;
+            }
+
+            window.state.pots.forEach(p => {
+                const target = p.target && p.target > 0 ? p.target : 0;
+                const pct = target > 0 ? Math.min(Math.round((p.current / target) * 100), 100) : 100;
+                const el = document.createElement('div');
+                el.className = 'bg-white rounded-xl p-4 border border-grimoire-lilac/20 relative flex flex-col justify-between shadow-sm';
+                el.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-4 mb-3">
+                            <div class="potion-vial" title="${target > 0 ? pct + '%' : 'Saldo'}">
+                                <div class="potion-liquid" style="height: ${target > 0 ? pct : 100}%;"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-serif font-bold text-base text-grimoire-deepviolet">${p.name}</h4>
+                                    ${target > 0 ? `<span class="text-xs font-bold text-grimoire-darksage font-serif">${pct}%</span>` : ''}
+                                </div>
+                                <p class="text-sm font-bold text-grimoire-deepviolet mb-0.5">${formatEUR(p.current)}</p>
+                                ${target > 0 ? `<p class="text-[11px] text-grimoire-plum/50">Obiettivo: ${formatEUR(p.target)}</p>` : ''}
+                            </div>
+                        </div>
+
+                        ${p.autoAmount && p.autoAmount > 0 ? `
+                        <div class="mb-3 px-2.5 py-1.5 rounded-lg bg-parchment-50 border border-grimoire-lilac/15 text-[11px] text-grimoire-plum flex items-center justify-between">
+                            <span class="flex items-center gap-1 font-medium"><i data-lucide="repeat" class="w-3 h-3 text-grimoire-sage"></i> Auto-versamento:</span>
+                            <strong class="font-serif text-grimoire-deepviolet">${formatEUR(p.autoAmount)} / ${p.autoFreq === 'weekly' ? 'settimana' : p.autoFreq === 'monthly' ? 'mese' : 'anno'}</strong>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-grimoire-lilac/10">
+                        <div class="flex gap-1.5">
+                            <button onclick="openDepositModal('${p.id}')" class="flex-1 text-[11px] bg-grimoire-deepviolet hover:bg-grimoire-plum text-white py-1.5 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Versa
+                            </button>
+                            <button onclick="openPotExpenseModal('${p.id}')" class="flex-1 text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 py-1.5 rounded-lg font-medium transition flex items-center justify-center gap-1">
+                                <i data-lucide="minus" class="w-3 h-3"></i> Spesa
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] text-grimoire-plum/60 pt-1">
+                            <button onclick="openPotHistoryModal('${p.id}')" class="hover:text-grimoire-deepviolet underline">Storico Uscite</button>
+                            <div class="flex gap-2">
+                                <button onclick="editPot('${p.id}')" class="hover:text-grimoire-deepviolet font-medium">Modifica</button>
+                                <button onclick="deletePot('${p.id}')" class="hover:text-rose-700">Elimina</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        function renderCategoriesModalList() {
+            const container = document.getElementById('modal-categories-list');
+            if(!container) return;
+            container.innerHTML = '';
+
+            window.state.categories.forEach(c => {
+                const el = document.createElement('div');
+                el.className = "flex items-center justify-between p-2.5 rounded-xl bg-white border border-grimoire-lilac/20";
+                el.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-grimoire-softpurple text-grimoire-deepviolet flex items-center justify-center">
+                            <i data-lucide="${c.icon || 'leaf'}" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-grimoire-deepviolet">${c.name}</p>
+                            <p class="text-[10px] text-grimoire-plum/60">Budget: ${formatEUR(c.budget)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="editCategory('${c.id}')" class="text-grimoire-plum/50 hover:text-grimoire-deepviolet transition p-1" title="Modifica">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteCategory('${c.id}')" class="text-grimoire-plum/30 hover:text-rose-700 transition p-1" title="Elimina">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        window.setTransactionType = function(type) {
+            window.state.currentTxType = type;
+            document.getElementById('btn-type-expense').className = type === 'expense' ? "py-2 text-xs font-semibold rounded-lg bg-rose-100 text-rose-800 border border-rose-200" : "py-2 text-xs font-semibold rounded-lg text-grimoire-plum/60";
+            document.getElementById('btn-type-income').className = type === 'income' ? "py-2 text-xs font-semibold rounded-lg bg-emerald-100 text-grimoire-darksage border border-emerald-200" : "py-2 text-xs font-semibold rounded-lg text-grimoire-plum/60";
+        }
+
+        window.handleAddTransaction = async function(e) {
+            e.preventDefault();
+            const accountId = document.getElementById('tx-account-select').value || 'main';
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+            const desc = document.getElementById('tx-desc').value;
+            const note = document.getElementById('tx-note').value;
+            const category = document.getElementById('tx-category-select').value;
+            const date = document.getElementById('tx-date').value;
+
+            if(!amount || !desc) return;
+
+            const newTx = {
+                id: Date.now().toString(),
+                accountId: accountId,
+                type: window.state.currentTxType,
+                amount: amount,
+                category: category,
+                desc: desc,
+                note: note,
+                date: date
+            };
+
+            // Aggiorna saldo se il movimento riguarda un conto specifico
+            if(accountId && accountId !== 'main') {
+                const pot = window.state.pots.find(p => p.id === accountId);
+                if(pot) {
+                    if(window.state.currentTxType === 'income') pot.current += amount;
+                    else pot.current = Math.max(0, pot.current - amount);
+                    await window.saveDataToCloud('pots', pot.id, pot);
+                }
+            }
+
+            window.state.transactions.unshift(newTx);
+            await window.saveDataToCloud('transactions', newTx.id, newTx);
+            document.getElementById('transaction-form').reset();
+            document.getElementById('tx-date').valueAsDate = new Date();
+            closeModal('transaction-modal');
+        }
+
+        window.deleteTransaction = async function(id) {
+            const tx = window.state.transactions.find(t => t.id === id);
+            if(tx && tx.accountId && tx.accountId !== 'main') {
+                const pot = window.state.pots.find(p => p.id === tx.accountId);
+                if(pot) {
+                    // Ripristina il saldo del conto separato
+                    if(tx.type === 'income') pot.current = Math.max(0, pot.current - tx.amount);
+                    else pot.current += tx.amount;
+                    await window.saveDataToCloud('pots', pot.id, pot);
+                }
+            }
+            await window.deleteDataFromCloud('transactions', id);
+        }
+
+        window.handleSaveCategoryForm = async function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editing-cat-id').value;
+            const name = document.getElementById('new-cat-name').value;
+            const budget = parseFloat(document.getElementById('new-cat-budget').value) || 0;
+            const icon = document.getElementById('new-cat-icon').value;
+
+            if(!name) return;
+
+            if(editId) {
+                const cat = window.state.categories.find(c => c.id === editId);
+                if(cat) {
+                    cat.name = name;
+                    cat.budget = budget;
+                    cat.icon = icon;
+                    await window.saveDataToCloud('categories', cat.id, cat);
+                }
+            } else {
+                const newCat = {
+                    id: Date.now().toString(),
+                    name: name,
+                    budget: budget,
+                    icon: icon
+                };
+                window.state.categories.push(newCat);
+                await window.saveDataToCloud('categories', newCat.id, newCat);
+            }
+
+            resetCategoryForm();
+            populateCategorySelects();
+        }
+
+        window.editCategory = function(id) {
+            const cat = window.state.categories.find(c => c.id === id);
+            if(!cat) return;
+            document.getElementById('editing-cat-id').value = cat.id;
+            document.getElementById('new-cat-name').value = cat.name;
+            document.getElementById('new-cat-budget').value = cat.budget;
+            document.getElementById('new-cat-icon').value = cat.icon || 'leaf';
+            document.getElementById('cat-submit-btn').innerText = "Salva Modifiche Categoria";
+            document.getElementById('cat-cancel-btn').classList.remove('hidden');
+        }
+
+        window.resetCategoryForm = function() {
+            document.getElementById('category-form').reset();
+            document.getElementById('editing-cat-id').value = '';
+            document.getElementById('cat-submit-btn').innerText = "+ Aggiungi Nuova Categoria";
+            document.getElementById('cat-cancel-btn').classList.add('hidden');
+        }
+
+        window.deleteCategory = async function(id) {
+            await window.deleteDataFromCloud('categories', id);
+            populateCategorySelects();
+        }
+
+        window.setRecurringType = function(type) {
+            window.state.currentRecType = type;
+            document.getElementById('btn-rec-type-expense').className = type === 'expense' ? "py-1.5 text-xs font-semibold rounded-lg bg-rose-100 text-rose-800 border border-rose-200" : "py-1.5 text-xs font-semibold rounded-lg text-grimoire-plum/60";
+            document.getElementById('btn-rec-type-income').className = type === 'income' ? "py-1.5 text-xs font-semibold rounded-lg bg-emerald-100 text-grimoire-darksage border border-emerald-200" : "py-1.5 text-xs font-semibold rounded-lg text-grimoire-plum/60";
+        }
+
+        window.toggleCustomFreqInput = function() {
+            const freq = document.getElementById('rec-frequency').value;
+            document.getElementById('rec-custom-freq-box').classList.toggle('hidden', freq !== 'custom_weeks' && freq !== 'custom_months');
+        }
+
+        window.handleAddRecurring = async function(e) {
+            e.preventDefault();
+            const accountId = document.getElementById('rec-account-select').value || 'main';
+            const amount = parseFloat(document.getElementById('rec-amount').value);
+            const desc = document.getElementById('rec-desc').value;
+            const category = document.getElementById('rec-category-select').value;
+            const frequency = document.getElementById('rec-frequency').value;
+            const customVal = parseInt(document.getElementById('rec-custom-val').value) || 1;
+            const nextDate = document.getElementById('rec-next-date').value;
+
+            if(!amount || !desc || !nextDate) return;
+
+            const newRec = {
+                id: Date.now().toString(),
+                accountId: accountId,
+                type: window.state.currentRecType,
+                amount: amount,
+                category: category,
+                desc: desc,
+                frequency: frequency,
+                customVal: customVal,
+                nextDate: nextDate
+            };
+
+            window.state.recurring.push(newRec);
+            await window.saveDataToCloud('recurring', newRec.id, newRec);
+            document.getElementById('recurring-form').reset();
+            closeModal('recurring-modal');
+        }
+
+        window.deleteRecurring = async function(id) {
+            await window.deleteDataFromCloud('recurring', id);
+        }
+
+        window.handleAddPot = async function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editing-pot-id').value;
+            const name = document.getElementById('pot-name').value;
+            const target = parseFloat(document.getElementById('pot-target').value);
+            const current = parseFloat(document.getElementById('pot-current').value) || 0;
+            const autoAmount = parseFloat(document.getElementById('pot-auto-amount').value) || 0;
+            const autoFreq = document.getElementById('pot-auto-freq').value;
+
+            if(!name || !target) return;
+
+            if(editId) {
+                const pot = window.state.pots.find(p => p.id === editId);
+                if(pot) {
+                    pot.name = name;
+                    pot.target = target;
+                    pot.current = current;
+                    pot.autoAmount = autoAmount;
+                    pot.autoFreq = autoFreq;
+                    await window.saveDataToCloud('pots', pot.id, pot);
+                }
+            } else {
+                const newPot = {
+                    id: Date.now().toString(),
+                    name: name,
+                    target: target,
+                    current: current,
+                    autoAmount: autoAmount,
+                    autoFreq: autoFreq,
+                    expenses: []
+                };
+                window.state.pots.push(newPot);
+                await window.saveDataToCloud('pots', newPot.id, newPot);
+            }
+
+            resetPotForm();
+            closeModal('pot-modal');
+        }
+
+        window.editPot = function(id) {
+            const pot = window.state.pots.find(p => p.id === id);
+            if(!pot) return;
+            document.getElementById('editing-pot-id').value = pot.id;
+            document.getElementById('pot-name').value = pot.name;
+            document.getElementById('pot-target').value = pot.target;
+            document.getElementById('pot-current').value = pot.current;
+            document.getElementById('pot-auto-amount').value = pot.autoAmount || '';
+            document.getElementById('pot-auto-freq').value = pot.autoFreq || 'monthly';
+            document.getElementById('pot-modal-title').innerText = "Modifica Conto / Salvadanaio";
+            document.getElementById('pot-submit-btn').innerText = "Salva Modifiche Conto";
+            openModal('pot-modal');
+        }
+
+        window.resetPotForm = function() {
+            document.getElementById('pot-form').reset();
+            document.getElementById('editing-pot-id').value = '';
+            document.getElementById('pot-modal-title').innerText = "Nuovo Conto / Salvadanaio";
+            document.getElementById('pot-submit-btn').innerText = "Crea Conto";
+            closeModal('pot-modal');
+        }
+
+        window.deletePot = async function(id) {
+            await window.deleteDataFromCloud('pots', id);
+        }
+
+        window.openDepositModal = function(potId) {
+            const pot = window.state.pots.find(p => p.id === potId);
+            if(!pot) return;
+            document.getElementById('deposit-pot-id').value = pot.id;
+            document.getElementById('deposit-pot-title').innerText = `Versa in "${pot.name}"`;
+            openModal('deposit-modal');
+        }
+
+        window.handleDepositPot = async function(e) {
+            e.preventDefault();
+            const potId = document.getElementById('deposit-pot-id').value;
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+
+            if(!amount) return;
+
+            const pot = window.state.pots.find(p => p.id === potId);
+            if(pot) {
+                pot.current += amount;
+                await window.saveDataToCloud('pots', pot.id, pot);
+            }
+
+            document.getElementById('deposit-form').reset();
+            closeModal('deposit-modal');
+        }
+
+        window.openPotExpenseModal = function(potId) {
+            const pot = window.state.pots.find(p => p.id === potId);
+            if(!pot) return;
+            document.getElementById('pot-expense-id').value = pot.id;
+            document.getElementById('pot-expense-title').innerText = `Uscita dal conto "${pot.name}"`;
+            openModal('pot-expense-modal');
+        }
+
+        window.handlePotExpense = async function(e) {
+            e.preventDefault();
+            const potId = document.getElementById('pot-expense-id').value;
+            const amount = parseFloat(document.getElementById('pot-exp-amount').value);
+            const desc = document.getElementById('pot-exp-desc').value;
+            const category = document.getElementById('pot-exp-category-select').value;
+            const date = document.getElementById('pot-exp-date').value;
+
+            if(!amount || !desc) return;
+
+            const pot = window.state.pots.find(p => p.id === potId);
+            if(pot) {
+                pot.current = Math.max(0, pot.current - amount);
+                if(!pot.expenses) pot.expenses = [];
+                pot.expenses.unshift({
+                    id: Date.now().toString(),
+                    amount: amount,
+                    desc: desc,
+                    category: category,
+                    date: date
+                });
+                await window.saveDataToCloud('pots', pot.id, pot);
+
+                // Registra contestualmente la spesa nello STORICO MOVIMENTI GENERALE!
+                const newTx = {
+                    id: Date.now().toString(),
+                    accountId: pot.id,
+                    type: 'expense',
+                    amount: amount,
+                    category: category,
+                    desc: `${desc} (${pot.name})`,
+                    note: `Uscita dal conto separato "${pot.name}"`,
+                    date: date
+                };
+                window.state.transactions.unshift(newTx);
+                await window.saveDataToCloud('transactions', newTx.id, newTx);
+            }
+
+            document.getElementById('pot-expense-form').reset();
+            document.getElementById('pot-exp-date').valueAsDate = new Date();
+            closeModal('pot-expense-modal');
+        }
+
+        window.openPotHistoryModal = function(potId) {
+            const pot = window.state.pots.find(p => p.id === potId);
+            if(!pot) return;
+            document.getElementById('pot-history-title').innerText = `Storico Uscite: ${pot.name}`;
+
+            const listContainer = document.getElementById('pot-history-list');
+            listContainer.innerHTML = '';
+
+            const expenses = pot.expenses || [];
+            if(expenses.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-grimoire-plum/40 py-6 text-center italic font-serif">Nessuna uscita registrata da questo conto.</p>`;
+            } else {
+                expenses.forEach(ex => {
+                    const item = document.createElement('div');
+                    item.className = "flex items-center justify-between p-3 rounded-xl bg-white border border-grimoire-lilac/20";
+                    item.innerHTML = `
+                        <div>
+                            <p class="text-sm font-medium text-grimoire-deepviolet">${ex.desc}</p>
+                            <p class="text-[11px] text-grimoire-plum/60">${ex.date}</p>
+                        </div>
+                        <span class="font-serif font-bold text-sm text-rose-700">-${formatEUR(ex.amount)}</span>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            }
+
+            openModal('pot-history-modal');
+        }
+
+        window.exportData = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.state));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `grimorio_finanze_backup.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+    </script>
+</body>
+</html>
